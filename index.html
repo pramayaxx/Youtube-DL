@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>ChatGPT & EvilGPT Interface</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header with black theme and different effects */
+        #banner {
+            background: #111111;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Effect for ChatGPT */
+        #banner.chatgpt:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(0, 240, 255, 0.3), rgba(255, 0, 200, 0.3));
+            opacity: 0.7;
+            z-index: -1;
+            animation: animateHeader 5s infinite alternate;
+        }
+
+        /* Effect for Image Generator */
+        #banner.imagegen:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(0, 255, 153, 0.3), rgba(0, 204, 119, 0.3));
+            opacity: 0.7;
+            z-index: -1;
+            animation: animateHeader 5s infinite alternate;
+        }
+
+        /* Effect for EvilGPT */
+        #banner.evilgpt:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 0, 0, 0.3), rgba(128, 0, 0, 0.3));
+            opacity: 0.7;
+            z-index: -1;
+            animation: animateHeader 5s infinite alternate;
+        }
+
+        @keyframes animateHeader {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Menu Icon */
+        #menuIcon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: background 0.3s ease;
+            z-index: 1001;
+        }
+
+        #menuIcon:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #menuIcon div {
+            width: 20px;
+            height: 3px;
+            background-color: white;
+            margin: 3px 0;
+            border-radius: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        #menuOptions {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            display: none;
+            flex-direction: column;
+            background: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        #menuOptions a {
+            padding: 10px 20px;
+            text-decoration: none;
+            color: white;
+            border-bottom: 1px solid #333;
+            transition: background 0.3s ease;
+        }
+
+        #menuOptions a:hover {
+            background: #333;
+        }
+
+        #menuOptions a:last-child {
+            border-bottom: none;
+        }
+
+        #menuOptions.show {
+            display: flex;
+            opacity: 1;
+            animation: fadeInMenu 0.3s ease;
+        }
+
+        @keyframes fadeInMenu {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #chat-container, #evilgpt-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            padding-bottom: 100px;
+            overflow-y: auto;
+            flex-grow: 1;
+            scroll-behavior: smooth;
+            background-color: #000000; /* Default to black for ChatGPT */
+        }
+
+        .message {
+            max-width: 80%;
+            margin: 10px;
+            padding: 12px 18px;
+            border-radius: 15px;
+            animation: fadeIn 0.5s ease-in-out;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #1f1f1f;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+            color: white;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: #2a2a2a;
+            box-shadow: 0 0 15px rgba(255, 0, 200, 0.5);
+            color: white;
+        }
+
+        .evilbot-message {
+            align-self: flex-start;
+            background: #4a0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            color: white;
+        }
+
+        #inputContainer, #evilInputContainer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            width: 90%;
+            max-width: 800px;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #000000;
+            border-radius: 25px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+            z-index: 1001;
+        }
+
+        #questionTypeBox, #evilQuestionTypeBox {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: #0e0e0e;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 0, 200, 0.3);
+            transition: box-shadow 0.3s ease;
+            margin-right: 10px;
+        }
+
+        #questionTypeBox:focus, #evilQuestionTypeBox:focus {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+        }
+
+        #sendButton, #evilSendButton {
+            background: linear-gradient(45deg, #ff00c8, #00f0ff);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #sendButton:hover, #evilSendButton:hover {
+            background: linear-gradient(45deg, #00f0ff, #ff00c8);
+            box-shadow: 0 0 20px rgba(255, 0, 200, 0.7);
+        }
+
+        #image-generator-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        input[type="text"], select {
+            background-color: #1a1a1a;
+            border: 2px solid #00ff99;
+            color: #00ff99;
+            padding: 10px;
+            font-size: 1rem;
+            margin-right: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00ff99;
+            transition: box-shadow 0.5s ease-in-out;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="text"]:focus, select:focus {
+            box-shadow: 0 0 20px #00ff99;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00ff99, #00cc77);
+            color: #0f0f0f;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            border-radius: 5px;
+            box-shadow: 0 0 15px #00ff99, 0 0 20px #00cc77;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #00cc77;
+            transform: scale(1.1);
+        }
+
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .image-wrapper {
+            margin: 10px;
+            position: relative;
+            border: 2px solid #00ff99;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #1a1a1a;
+            box-shadow: 0 0 15px #00ff99;
+            transition: transform 0.5s ease;
+            flex-basis: calc(50% - 40px);
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .image-wrapper {
+                flex-basis: calc(100% - 40px);
+            }
+        }
+
+        .image-wrapper:hover {
+            transform: rotateY(10deg) rotateX(5deg);
+        }
+
+        .image-wrapper img {
+            max-width: 100%;
+            border-radius: 5px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .download-button {
+            display: block;
+            background-color: #00ff99;
+            color: #0f0f0f;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .download-button:hover {
+            background-color: #00cc77;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .image-url {
+            margin-top: 10px;
+            color: #00ff99;
+            word-break: break-all;
+        }
+
+        .loading-container {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .loading-container.active {
+            display: flex;
+        }
+
+        .loading-ring {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(0, 255, 153, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff99;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-left: 20px;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px #00ff99;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .message {
+                max-width: 90%;
+            }
+
+            #inputContainer, #evilInputContainer {
+                width: 90%;
+            }
+
+            #questionTypeBox, #evilQuestionTypeBox {
+                font-size: 14px;
+            }
+
+            #sendButton, #evilSendButton {
+                padding: 10px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <div id="banner" class="chatgpt">
+            ChatGPT Futuristic
+            <div id="menuIcon">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div id="menuOptions">
+                <a href="#" id="chatGPTLink">ChatGPT</a>
+                <a href="#" id="imageGenLink">Image Generator</a>
+                <a href="#" id="evilGPTLink">EvilGPT</a>
+            </div>
+        </div>
+        <div id="chat-container">
+            <!-- ChatGPT Messages will be dynamically appended here -->
+        </div>
+        <div id="image-generator-container">
+            <div class="input-container">
+                <input type="text" id="prompt" placeholder="Enter your image prompt">
+                <select id="mode">
+                    <option value="sfw">SFW</option>
+                    <option value="nsfw">NSFW</option>
+                </select>
+                <button onclick="generateImages()">Generate</button>
+            </div>
+            <div class="loading-container" id="loadingContainer">
+                <div class="loading-ring"></div>
+                <div class="loading-text">Generating Images... Please wait</div>
+            </div>
+            <div class="image-container" id="imageContainer"></div>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+        <div id="evilgpt-container" style="display:none;">
+            <div id="chat-container">
+                <!-- EvilGPT Messages will be dynamically appended here -->
+            </div>
+            <div id="evilInputContainer">
+                <input type="text" id="evilQuestionTypeBox" placeholder="Ask your evil question..." autocomplete="off">
+                <button id="evilSendButton">Send</button>
+            </div>
+        </div>
+        <div id="inputContainer">
+            <input type="text" id="questionTypeBox" placeholder="Ask your question..." autocomplete="off">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatGPTLink = document.getElementById('chatGPTLink');
+        const imageGenLink = document.getElementById('imageGenLink');
+        const evilGPTLink = document.getElementById('evilGPTLink');
+        const chatContainer = document.getElementById('chat-container');
+        const imageGenContainer = document.getElementById('image-generator-container');
+        const evilgptContainer = document.getElementById('evilgpt-container');
+        const inputContainer = document.getElementById('inputContainer');
+        const evilInputContainer = document.getElementById('evilInputContainer');
+
+        const menuIcon = document.getElementById('menuIcon');
+        const menuOptions = document.getElementById('menuOptions');
+        const banner = document.getElementById('banner');
+
+        menuIcon.addEventListener('click', () => {
+            menuOptions.classList.toggle('show');
+        });
+
+        // Close the menu if clicked outside
+        document.addEventListener('click', (e) => {
+            if (!menuIcon.contains(e.target) && !menuOptions.contains(e.target)) {
+                menuOptions.classList.remove('show');
+            }
+        });
+
+        // Toggle between sections
+        chatGPTLink.addEventListener('click', () => {
+            chatContainer.style.display = 'flex';
+            imageGenContainer.style.display = 'none';
+            evilgptContainer.style.display = 'none';
+            inputContainer.style.display = 'flex';
+            evilInputContainer.style.display = 'none';
+            banner.className = 'chatgpt';
+            banner.textContent = "ChatGPT Futuristic";
+            menuOptions.classList.remove('show');
+        });
+
+        imageGenLink.addEventListener('click', () => {
+            chatContainer.style.display = 'none';
+            imageGenContainer.style.display = 'flex';
+            evilgptContainer.style.display = 'none';
+            inputContainer.style.display = 'none';
+            evilInputContainer.style.display = 'none';
+            banner.className = 'imagegen';
+            banner.textContent = "Image Generator By Ashlynn";
+            menuOptions.classList.remove('show');
+        });
+
+        evilGPTLink.addEventListener('click', () => {
+            chatContainer.style.display = 'none';
+            imageGenContainer.style.display = 'none';
+            evilgptContainer.style.display = 'flex';
+            inputContainer.style.display = 'none';
+            evilInputContainer.style.display = 'flex';
+            banner.className = 'evilgpt';
+            banner.textContent = "EvilGPT";
+            menuOptions.classList.remove('show');
+        });
+
+        // ChatGPT Functionality
+        const questionTypeBox = document.getElementById('questionTypeBox');
+        const sendButton = document.getElementById('sendButton');
+
+        const userId = Math.floor(Math.random() * 1000000);
+
+        sendButton.addEventListener('click', sendMessage);
+        questionTypeBox.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function addMessage(message, isUser = false, isEvil = false) {
+            const messageElement = document.createElement('div');
+            messageElement.className = isUser ? 'user-message message' : (isEvil ? 'evilbot-message message' : 'bot-message message');
+            if (isEvil) {
+                evilgptContainer.appendChild(messageElement);
+                evilgptContainer.scrollTop = evilgptContainer.scrollHeight;
+            } else {
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            messageElement.textContent = message;
+        }
+
+        async function fetchAnswerFromAPI(question) {
+            try {
+                const apiUrl = `https://api.guruapi.tech/ai/gpt4?username=${userId}&query=${encodeURIComponent(question)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const answer = data.msg;
+
+                const loadingMessage = chatContainer.querySelector('.bot-message.message:last-child');
+                if (loadingMessage) {
+                    loadingMessage.textContent = `Bot: ${answer}`;
+                } else {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'bot-message message';
+                    botMessage.textContent = `Bot: ${answer}`;
+                    chatContainer.appendChild(botMessage);
+                }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch (error) {
+                addMessage("Oops! An error occurred while fetching the answer.");
+            }
+        }
+
+        async function sendMessage() {
+            const userMessage = questionTypeBox.value.trim();
+            if (userMessage !== '') {
+                addMessage(`You: ${userMessage}`, true);
+
+                const loadingMessage = document.createElement('div');
+                loadingMessage.className = 'bot-message message';
+                loadingMessage.textContent = "Bot: Answer is loading...";
+                chatContainer.appendChild(loadingMessage);
+
+                await fetchAnswerFromAPI(userMessage);
+                questionTypeBox.value = '';
+            }
+        }
+
+        // EvilGPT Functionality
+        const evilQuestionTypeBox = document.getElementById('evilQuestionTypeBox');
+        const evilSendButton = document.getElementById('evilSendButton');
+
+        evilSendButton.addEventListener('click', sendEvilMessage);
+        evilQuestionTypeBox.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendEvilMessage();
+            }
+        });
+
+        async function fetchEvilAnswerFromAPI(question) {
+            try {
+                const apiUrl = `https://white-evilgpt.ashlynn.workers.dev/?username=${userId}&question=${encodeURIComponent(question)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const answer = data.answer;
+
+                const loadingMessage = evilgptContainer.querySelector('.evilbot-message.message:last-child');
+                if (loadingMessage) {
+                    loadingMessage.textContent = `EvilBot: ${answer}`;
+                } else {
+                    const evilbotMessage = document.createElement('div');
+                    evilbotMessage.className = 'evilbot-message message';
+                    evilbotMessage.textContent = `EvilBot: ${answer}`;
+                    evilgptContainer.appendChild(evilbotMessage);
+                }
+                evilgptContainer.scrollTop = evilgptContainer.scrollHeight;
+            } catch (error) {
+                addMessage("Oops! An error occurred while fetching the evil answer.", false, true);
+            }
+        }
+
+        async function sendEvilMessage() {
+            const userMessage = evilQuestionTypeBox.value.trim();
+            if (userMessage !== '') {
+                addMessage(`You: ${userMessage}`, true, true);
+
+                const loadingMessage = document.createElement('div');
+                loadingMessage.className = 'evilbot-message message';
+                loadingMessage.textContent = "EvilBot: Answer is loading...";
+                evilgptContainer.appendChild(loadingMessage);
+
+                await fetchEvilAnswerFromAPI(userMessage);
+                evilQuestionTypeBox.value = '';
+            }
+        }
+
+        // Image Generator Functionality
+        async function generateImages() {
+            const prompt = document.getElementById('prompt').value;
+            const mode = document.getElementById('mode').value;
+            const imageContainer = document.getElementById('imageContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            const loadingContainer = document.getElementById('loadingContainer');
+
+            // Show loading animation
+            loadingContainer.classList.add('active');
+
+            imageContainer.innerHTML = ''; // Clear previous images
+            errorMessage.innerText = ''; // Clear previous errors
+
+            const apiUrl = mode === 'sfw' 
+                ? `https://decord.ashlynn.workers.dev/?prompt=${encodeURIComponent(prompt)}&image=6`
+                : `https://deadimage.ashlynn.workers.dev/?prompt=${encodeURIComponent(prompt)}&image=6`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+
+                if (data.images) {
+                    data.images.forEach((imageUrl, index) => {
+                        const imageWrapper = document.createElement('div');
+                        imageWrapper.classList.add('image-wrapper');
+
+                        const imgElement = document.createElement('img');
+                        imgElement.src = imageUrl;
+                        imgElement.alt = 'Generated Image';
+                        imgElement.crossOrigin = "anonymous";
+                        imageWrapper.appendChild(imgElement);
+
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = imageUrl;
+                        downloadLink.download = `generated-image-${Date.now()}.png`;
+                        downloadLink.classList.add('download-button');
+                        downloadLink.innerText = 'Download';
+                        imageWrapper.appendChild(downloadLink);
+
+                        imageContainer.appendChild(imageWrapper);
+                    });
+                } else {
+                    errorMessage.innerText = 'Failed to generate images. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error generating images:', error);
+                errorMessage.innerText = 'An error occurred while generating images.';
+            } finally {
+                loadingContainer.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
